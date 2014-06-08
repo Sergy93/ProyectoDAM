@@ -111,7 +111,7 @@ public final class ObjectManager {
         String[] fields = new String[]{
             "Table", "Number of Rows"
         };
-
+        persistence.changeDatabase(database);
         actualDatabase = database;
 
         for (int i = 0; i < tables.size(); i++) {

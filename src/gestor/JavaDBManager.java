@@ -9,12 +9,9 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultComboBoxModel;
@@ -32,7 +29,6 @@ import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.border.LineBorder;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
-import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
 public final class JavaDBManager extends JFrame {
@@ -374,7 +370,7 @@ public final class JavaDBManager extends JFrame {
      *
      * This class handles all events related to the UI interaction.
      */
-    private class InterfaceManager extends MouseAdapter implements ActionListener, TreeSelectionListener, ItemListener {
+    private class InterfaceManager extends MouseAdapter implements ActionListener, TreeSelectionListener {
 
         //Tratamiento botones
         @Override
@@ -395,14 +391,10 @@ public final class JavaDBManager extends JFrame {
             } else if (level == 2) {
                 objManager.showTablesOnDatabase(tblShow, node);
             } else {
-                String database = path.getParentPath().toString();
+                String database = path.getParentPath().getLastPathComponent().toString();
+                objManager.getPersistence().changeDatabase(database);
                 objManager.showRowsOnTable(tblShow, database, node);
             }
-        }
-
-        @Override
-        public void itemStateChanged(ItemEvent e) {
-
         }
 
         @Override
@@ -583,55 +575,57 @@ public final class JavaDBManager extends JFrame {
 
         public void showCreateTableForm() {
 
+            HashMap fields = new HashMap<>();
+
             JDialog form = new JDialog(MANAGER, "New table", true);
 
-            DefaultComboBoxModel cmbModel = new DefaultComboBoxModel(new String[]{"1", "2"});
-
-            HashMap<String, String> fields = new HashMap<>();
-            Map boxes = new HashMap();
+            DefaultComboBoxModel cmbModel = new DefaultComboBoxModel(new String[]{"INTEGER", "VARCHAR(50)"});
 
             JPanel panel = new JPanel(new GridBagLayout());
             GridBagConstraints cs = new GridBagConstraints();
 
             cs.fill = GridBagConstraints.HORIZONTAL;
 
-            //STANDARD JDialog code   
-            final JLabel lblTableName = new JLabel("Table name:");
-            cs.gridx = 0;
-            cs.gridy = 0;
-            cs.gridwidth = 1;
-            panel.add(lblTableName);
+            String tableName = JOptionPane.showInputDialog(MANAGER, "Enter the new table name", "New table", JOptionPane.QUESTION_MESSAGE);
+            Integer tableRows;
 
-            final JTextField txtTableName = new JTextField();
-            cs.gridx = 0;
-            cs.gridy = 1;
-            cs.gridwidth = 2;
-            panel.add(txtTableName);
+            if (tableName == null) {
+                return;
+            } else if (tableName.equals("")) {
+                JOptionPane.showMessageDialog(MANAGER, "The name cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            try {
+                tableRows = (int) JOptionPane.showInputDialog(MANAGER, "Enter the number of fields", "Number of fields", JOptionPane.QUESTION_MESSAGE, null, new Integer[]{1, 2, 3, 4, 5, 6}, null);
+            } catch (NullPointerException ex) {
+                return;
+            }
 
-            final JLabel lblFieldsNumber = new JLabel("Number of fields:");
-            cs.gridx = 0;
-            cs.gridy = 1;
-            cs.gridwidth = 1;
-            panel.add(lblFieldsNumber);
+            for (int i = 0; i < tableRows; i++) {
+                JLabel lblRowName = new JLabel("Name: " + (i));
+                cs.gridx = 0;
+                cs.gridy = i - 1;
+                cs.gridwidth = 1;
+                panel.add(lblRowName, cs);
 
-            final JComboBox cmbFieldsNumber = new JComboBox(new Integer[]{1, 2, 3, 4, 5});
-            cs.gridx = 1;
-            cs.gridy = 1;
-            cs.gridwidth = 2;
-            panel.add(cmbFieldsNumber);
+                JTextField txtRowName = new JTextField();
+                cs.gridx = 1;
+                cs.gridy = i - 1;
+                cs.gridwidth = 3;
+                panel.add(txtRowName, cs);
 
-            panel.setBorder(new LineBorder(Color.GRAY));
+                JLabel lblRowType = new JLabel("Type: " + (i));
+                cs.gridx = 0;
+                cs.gridy = i;
+                cs.gridwidth = 1;
+                panel.add(lblRowType, cs);
 
-            int fieldsCount = (int) cmbFieldsNumber.getSelectedItem();
-
-            for (int i = 0; i < fieldsCount; i += 4) {
-                JLabel lblType = new JLabel("Select type of field" + (i));
-                JComboBox<String> cmbType = new JComboBox<>(cmbModel);
-                JLabel lblName = new JLabel("Write field name:" + (i));
-                JTextField txtName = new JTextField();
-
-                boxes.put(cmbType, txtName);
-
+                JComboBox cmbRowType = new JComboBox(cmbModel);
+                cs.gridx = 1;
+                cs.gridy = i;
+                cs.gridwidth = 3;
+                panel.add(cmbRowType, cs);
+                // fields.put(cmbRowType, txtRowName);
             }
 
             JButton btnCreateTable = new JButton("Create Table");
@@ -643,9 +637,15 @@ public final class JavaDBManager extends JFrame {
                 }
             });
 
+            cs.gridx = 1;
+            cs.gridy = cs.gridheight + 1;
+            panel.add(btnCreateTable, cs);
+
+            panel.setBorder(new LineBorder(Color.GRAY));
+
             //Fboxes.put(btnCreateTable);
             form.add(panel);
-
+            form.setSize(500, 300);
             form.setVisible(true);
 
         }
