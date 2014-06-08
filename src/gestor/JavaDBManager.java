@@ -2,6 +2,7 @@ package gestor;
 
 import bbdd.ObjectManager;
 import bbdd.PersistenceWrapper;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
@@ -14,15 +15,11 @@ import java.awt.event.MouseEvent;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
@@ -579,8 +576,6 @@ public final class JavaDBManager extends JFrame {
 
             JDialog form = new JDialog(MANAGER, "New table", true);
 
-            DefaultComboBoxModel cmbModel = new DefaultComboBoxModel(new String[]{"INTEGER", "VARCHAR(50)"});
-
             JPanel panel = new JPanel(new GridBagLayout());
             GridBagConstraints cs = new GridBagConstraints();
 
@@ -602,33 +597,40 @@ public final class JavaDBManager extends JFrame {
             }
 
             for (int i = 0; i < tableRows; i++) {
-                JLabel lblRowName = new JLabel("Name: " + (i));
-                cs.gridx = 0;
-                cs.gridy = i - 1;
-                cs.gridwidth = 1;
-                panel.add(lblRowName, cs);
+                /*JLabel lblRowName = new JLabel("Name: " + (i));
+                 cs.gridx = 0;
+                 cs.gridy = i - 1;
+                 cs.gridwidth = 1;
+                 panel.add(lblRowName, cs);
 
-                JTextField txtRowName = new JTextField();
-                cs.gridx = 1;
-                cs.gridy = i - 1;
-                cs.gridwidth = 3;
-                panel.add(txtRowName, cs);
+                 JTextField txtRowName = new JTextField();
+                 cs.gridx = 1;
+                 cs.gridy = i - 1;
+                 cs.gridwidth = 3;
+                 panel.add(txtRowName, cs);
 
-                JLabel lblRowType = new JLabel("Type: " + (i));
-                cs.gridx = 0;
+                 JLabel lblRowType = new JLabel("Type: " + (i));
+                 cs.gridx = 0;
+                 cs.gridy = i;
+                 cs.gridwidth = 1;
+                 panel.add(lblRowType, cs);
+
+                 JComboBox cmbRowType = new JComboBox(cmbModel);
+                 cs.gridx = 1;
+                 cs.gridy = i;
+                 cs.gridwidth = 3;
+                 panel.add(cmbRowType, cs);
+                 // fields.put(cmbRowType, txtRowName);
+                 */
                 cs.gridy = i;
-                cs.gridwidth = 1;
-                panel.add(lblRowType, cs);
+                CreateTable row = new CreateTable();
+                panel.add(new CreateTable(), cs);
 
-                JComboBox cmbRowType = new JComboBox(cmbModel);
-                cs.gridx = 1;
-                cs.gridy = i;
-                cs.gridwidth = 3;
-                panel.add(cmbRowType, cs);
-                // fields.put(cmbRowType, txtRowName);
+                form.setSize(row.getWidth() + 20, form.getHeight() + row.getHeight());
             }
 
             JButton btnCreateTable = new JButton("Create Table");
+
             btnCreateTable.addActionListener(new ActionListener() {
 
                 @Override
@@ -637,15 +639,19 @@ public final class JavaDBManager extends JFrame {
                 }
             });
 
-            cs.gridx = 1;
-            cs.gridy = cs.gridheight + 1;
+            //cs.gridx = 1;
+            //cs.gridy = cs.gridheight + 1;
+            cs.gridy += 1;
             panel.add(btnCreateTable, cs);
 
             panel.setBorder(new LineBorder(Color.GRAY));
 
             //Fboxes.put(btnCreateTable);
-            form.add(panel);
-            form.setSize(500, 300);
+            CreateTable row = new CreateTable();
+            form.setSize(row.getWidth() + 20, form.getHeight() + row.getHeight());
+
+            form.add(panel, BorderLayout.CENTER);
+            form.revalidate();
             form.setVisible(true);
 
         }

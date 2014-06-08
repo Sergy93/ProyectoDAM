@@ -45,8 +45,8 @@ public final class PersistenceWrapper {
     }
 
     /**
-     * 
-     * @return 
+     *
+     * @return
      */
     public static PersistenceWrapper getInstance() {
         return INSTANCE;
@@ -268,6 +268,12 @@ public final class PersistenceWrapper {
 
     }
 
+    /**
+     *
+     * @param table
+     * @param values
+     * @return
+     */
     public boolean deleteSql(String table, String[] values) {
         try {
             String sql = "DELETE FROM " + table + " WHERE " + values[0] + " = '" + values[1] + "';";

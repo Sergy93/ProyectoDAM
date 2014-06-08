@@ -15,11 +15,13 @@ public class CreateTable extends javax.swing.JPanel {
         txtRowName = new javax.swing.JTextField();
         cmbRowType = new javax.swing.JComboBox();
 
+        setBorder(javax.swing.BorderFactory.createTitledBorder(""));
+
         lblRowName.setText("Row Name:");
 
         lblRowType.setText("Row Type:");
 
-        cmbRowType.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        cmbRowType.setModel(new javax.swing.DefaultComboBoxModel(new String[]{"INTEGER", "VARCHAR(50)"}));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -32,7 +34,7 @@ public class CreateTable extends javax.swing.JPanel {
                     .addComponent(lblRowName, javax.swing.GroupLayout.PREFERRED_SIZE, 69, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(cmbRowType, 0, 104, Short.MAX_VALUE)
+                    .addComponent(cmbRowType, 0, 100, Short.MAX_VALUE)
                     .addComponent(txtRowName))
                 .addContainerGap())
         );
@@ -47,7 +49,7 @@ public class CreateTable extends javax.swing.JPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblRowType)
                     .addComponent(cmbRowType, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(20, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
