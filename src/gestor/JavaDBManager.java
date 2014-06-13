@@ -2,8 +2,8 @@ package gestor;
 
 import bbdd.ObjectManager;
 import bbdd.PersistenceWrapper;
-import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -12,12 +12,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
@@ -292,6 +293,7 @@ public final class JavaDBManager extends JFrame {
             @Override
             public void run() {
                 MANAGER = new JavaDBManager();
+                MANAGER.setLocationRelativeTo(null);
                 MANAGER.setVisible(true);
             }
         });
@@ -389,7 +391,7 @@ public final class JavaDBManager extends JFrame {
                 objManager.showTablesOnDatabase(tblShow, node);
             } else {
                 String database = path.getParentPath().getLastPathComponent().toString();
-                objManager.getPersistence().changeDatabase(database);
+                objManager.changeDatabase(database);
                 objManager.showRowsOnTable(tblShow, database, node);
             }
         }
@@ -428,7 +430,7 @@ public final class JavaDBManager extends JFrame {
                         objManager.showTablesOnDatabase(tblShow, columnFirstValue);
                         break;
                     case "Table":
-                        objManager.showRowsOnTable(tblShow, ObjectManager.actualDatabase, columnFirstValue);
+                        objManager.showRowsOnTable(tblShow, ObjectManager.getActualDatabase(), columnFirstValue);
                         break;
                     default:
                         //JOptionPane.showMessageDialog(null, target.getModel().getValueAt(row, column).toString(), target.getModel().getColumnName(column), 1);
@@ -464,7 +466,7 @@ public final class JavaDBManager extends JFrame {
                     case "Database":
                         String databaseName = JOptionPane.showInputDialog(MANAGER, "New database name:", "New database");
                         if (databaseName != null) {
-                            created = objManager.getPersistence().createDatabase(databaseName);
+                            created = objManager.createDatabase(databaseName);
 
                             if (created) {
                                 objManager.showDatabases(tblShow);
@@ -477,31 +479,17 @@ public final class JavaDBManager extends JFrame {
                     case "Table":
 
                         if (SwingUtilities.isEventDispatchThread()) {
-                            showCreateTableForm();
+                            createTable();
                         } else {
                             SwingUtilities.invokeLater(new Runnable() {
                                 @Override
                                 public void run() {
-                                    showCreateTableForm();
+                                    createTable();
 
                                 }
                             });
                         }
 
-                        /*
-                         String tableName = JOptionPane.showInputDialog(parent, "New table name:", "New table");
-                         if (tableName != null) {
-                         HashMap tableFields = new HashMap();
-
-                         tableFields.put("INTEGER", "numero");
-                         tableFields.put("VARCHAR(20)", "texto");
-
-                         created = objManager.getPersistence().createTable(tableName, tableFields);
-                         if (created) {
-                         objManager.showTablesOnDatabase(tblShow, ObjectManager.actualDatabase);
-                         }
-                         }
-                         */
                         break;
                     default:
                         //JOptionPane.showMessageDialog(null, target.getModel().getValueAt(row, column).toString(), target.getModel().getColumnName(column), 1);
@@ -517,7 +505,7 @@ public final class JavaDBManager extends JFrame {
                 switch (columnType) {
 
                     case "Database":
-                        deleted = objManager.getPersistence().dropDatabase(firstValueName);
+                        deleted = objManager.dropDatabase(firstValueName);
                         if (deleted) {
                             objManager.showDatabases(tblShow);
                             objManager.loadDatabaseTree(treeDatabases);
@@ -527,9 +515,9 @@ public final class JavaDBManager extends JFrame {
                         break;
 
                     case "Table":
-                        deleted = objManager.getPersistence().dropTable(firstValueName);
+                        deleted = objManager.dropTable(firstValueName);
                         if (deleted) {
-                            objManager.showTablesOnDatabase(tblShow, ObjectManager.actualDatabase);
+                            objManager.showTablesOnDatabase(tblShow, ObjectManager.getActualDatabase());
                             objManager.loadDatabaseTree(treeDatabases);
 
                             JOptionPane.showMessageDialog(MANAGER, "Table " + firstValueName + " was dropped correctly.", "Dropped successfully", JOptionPane.INFORMATION_MESSAGE);
@@ -570,90 +558,89 @@ public final class JavaDBManager extends JFrame {
             return returnValue;
         }
 
-        public void showCreateTableForm() {
+        public void createTable() {
 
-            HashMap fields = new HashMap<>();
+            JCreateTablePanel row = new JCreateTablePanel();
+            final ArrayList<JCreateTablePanel> panelsList = new ArrayList<>();
+            //final ArrayList<JCreateTablePanel> finalList;
 
-            JDialog form = new JDialog(MANAGER, "New table", true);
+            JDialog creationWindow = new JDialog(MANAGER, "New table", true);
 
-            JPanel panel = new JPanel(new GridBagLayout());
+            JPanel rowContainer = new JPanel(new GridBagLayout());
             GridBagConstraints cs = new GridBagConstraints();
 
-            cs.fill = GridBagConstraints.HORIZONTAL;
+            JLabel lblTable = new JLabel();
 
-            String tableName = JOptionPane.showInputDialog(MANAGER, "Enter the new table name", "New table", JOptionPane.QUESTION_MESSAGE);
-            Integer tableRows;
+            JButton btnCreateTable = new JButton("Create Table");
 
+            Integer tableRows = 1;
+            Dimension dmPanel;
+
+            final String tableName;
+
+            tableName = JOptionPane.showInputDialog(MANAGER, "Enter the new table name", "New table", JOptionPane.QUESTION_MESSAGE);
             if (tableName == null) {
                 return;
             } else if (tableName.equals("")) {
-                JOptionPane.showMessageDialog(MANAGER, "The name cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(MANAGER, "The name cannot be empty.", "Empty name", JOptionPane.ERROR_MESSAGE);
+                return;
+            } else if (tableName.length() > 15) {
+                JOptionPane.showMessageDialog(MANAGER, "The name cannot be longer than 15 characters.", "Length Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
+
+            lblTable.setFont(new Font("TimesRoman", Font.ITALIC, 30));
+
+            lblTable.setText(tableName);
+
+            creationWindow.setSize(lblTable.getPreferredSize().width + 40, rowContainer.getPreferredSize().height + lblTable.getPreferredSize().height);
+
             try {
                 tableRows = (int) JOptionPane.showInputDialog(MANAGER, "Enter the number of fields", "Number of fields", JOptionPane.QUESTION_MESSAGE, null, new Integer[]{1, 2, 3, 4, 5, 6}, null);
             } catch (NullPointerException ex) {
                 return;
             }
 
+            cs.fill = GridBagConstraints.HORIZONTAL;
+
+            cs.gridy = 1;
+            //rowContainer.add(lblTable);
+
             for (int i = 0; i < tableRows; i++) {
-                /*JLabel lblRowName = new JLabel("Name: " + (i));
-                 cs.gridx = 0;
-                 cs.gridy = i - 1;
-                 cs.gridwidth = 1;
-                 panel.add(lblRowName, cs);
+                row = new JCreateTablePanel();
 
-                 JTextField txtRowName = new JTextField();
-                 cs.gridx = 1;
-                 cs.gridy = i - 1;
-                 cs.gridwidth = 3;
-                 panel.add(txtRowName, cs);
-
-                 JLabel lblRowType = new JLabel("Type: " + (i));
-                 cs.gridx = 0;
-                 cs.gridy = i;
-                 cs.gridwidth = 1;
-                 panel.add(lblRowType, cs);
-
-                 JComboBox cmbRowType = new JComboBox(cmbModel);
-                 cs.gridx = 1;
-                 cs.gridy = i;
-                 cs.gridwidth = 3;
-                 panel.add(cmbRowType, cs);
-                 // fields.put(cmbRowType, txtRowName);
-                 */
                 cs.gridy = i;
-                CreateTable row = new CreateTable();
-                panel.add(new CreateTable(), cs);
+                rowContainer.add(row, cs);
 
-                form.setSize(row.getWidth() + 20, form.getHeight() + row.getHeight());
+                creationWindow.setSize(row.getPreferredSize().width + 20, rowContainer.getPreferredSize().height + row.getPreferredSize().height);
+                panelsList.add(row);
             }
 
-            JButton btnCreateTable = new JButton("Create Table");
-
             btnCreateTable.addActionListener(new ActionListener() {
-
                 @Override
                 public void actionPerformed(ActionEvent e) {
-
+                    objManager.createTable(tableName, panelsList);
                 }
             });
 
-            //cs.gridx = 1;
-            //cs.gridy = cs.gridheight + 1;
             cs.gridy += 1;
-            panel.add(btnCreateTable, cs);
 
-            panel.setBorder(new LineBorder(Color.GRAY));
+            rowContainer.add(btnCreateTable, cs);
 
-            //Fboxes.put(btnCreateTable);
-            CreateTable row = new CreateTable();
-            form.setSize(row.getWidth() + 20, form.getHeight() + row.getHeight());
+            rowContainer.setBorder(new LineBorder(Color.GRAY));
 
-            form.add(panel, BorderLayout.CENTER);
-            form.revalidate();
-            form.setVisible(true);
+            dmPanel = rowContainer.getPreferredSize();
 
+            creationWindow.add(rowContainer);
+
+            lblTable.setLocation(dmPanel.width / 2, dmPanel.height / 2);
+
+            creationWindow.setSize(dmPanel.width + 20, dmPanel.height + row.getPreferredSize().height);
+
+            creationWindow.setLocationRelativeTo(MANAGER);
+
+            creationWindow.setResizable(false);
+            creationWindow.setVisible(true);
         }
 
     }

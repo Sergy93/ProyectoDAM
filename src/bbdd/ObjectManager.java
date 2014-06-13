@@ -1,6 +1,9 @@
 package bbdd;
 
+import gestor.JCreateTablePanel;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.JTree;
 import javax.swing.table.DefaultTableModel;
@@ -20,10 +23,10 @@ public final class ObjectManager {
 
     private final PersistenceWrapper persistence;
 
-    public ArrayList<String> databases;
+    private static String actualDatabase;
+    private static String actualTable;
 
-    public static String actualDatabase;
-    public static String actualTable;
+    public ArrayList<String> databases;
 
     private ObjectManager() {
         persistence = PersistenceWrapper.getInstance();
@@ -38,12 +41,12 @@ public final class ObjectManager {
         return INSTANCE;
     }
 
-    /**
-     *
-     * @return
-     */
-    public PersistenceWrapper getPersistence() {
-        return persistence;
+    public static void setActualDatabase(String db) {
+        actualDatabase = db;
+    }
+
+    public static String getActualDatabase() {
+        return actualDatabase;
     }
 
     /**
@@ -64,14 +67,15 @@ public final class ObjectManager {
 
         if (databases != null) {
             for (Object database : databases) {
-                ArrayList tables = persistence.getTables(database.toString());
-                DefaultMutableTreeNode child = new DefaultMutableTreeNode(database.toString());
+                ArrayList<String> tables = persistence.getTables(database.toString());
+                DefaultMutableTreeNode dbNode = new DefaultMutableTreeNode(database.toString());
 
-                for (Object table : tables) {
-                    child.add(new DefaultMutableTreeNode(table));
+                for (String table : tables) {
+                    DefaultMutableTreeNode tableNode = new DefaultMutableTreeNode(table);
+                    dbNode.add(tableNode);
                 }
 
-                treeRoot.add(child);
+                treeRoot.add(dbNode);
             }
         }
         tree.setModel(new DefaultTreeModel(treeRoot));
@@ -111,16 +115,26 @@ public final class ObjectManager {
         String[] fields = new String[]{
             "Table", "Number of Rows"
         };
-        persistence.changeDatabase(database);
+        try {
+            persistence.changeDatabase(database);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+        }
         actualDatabase = database;
 
         for (int i = 0; i < tables.size(); i++) {
             contentTables[i][0] = tables.get(i);
             String table = tables.get(i).toString();
-            String tableText = countToString(persistence.getRowCount(table).toString()) + " rows.";
-            contentTables[i][1] = tableText;
-        }
+            String tableText;
+            try {
+                tableText = countToString(persistence.getRowCount(table, actualDatabase).toString()) + " rows.";
 
+                contentTables[i][1] = tableText;
+
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
         fillTableWithContents(jTable, contentTables, fields);
     }
 
@@ -197,7 +211,12 @@ public final class ObjectManager {
      * @return
      */
     public boolean insertIntoTable(String table, String[] values) {
-        return persistence.insertSql(table, values);
+        try {
+            return persistence.insertSql(table, values);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
     }
 
     /**
@@ -208,17 +227,73 @@ public final class ObjectManager {
      * @param newValue
      */
     public void updateRowContent(JTable jTable, String field, String oldValue, String newValue) {
-        if (persistence.sqlUpdate(actualTable, field, oldValue, newValue)) {
-            showRowsOnTable(jTable, actualDatabase, actualTable);
+        try {
+            if (persistence.sqlUpdate(actualTable, field, oldValue, newValue)) {
+                showRowsOnTable(jTable, actualDatabase, actualTable);
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     public String[] getFieldsOnTable(String table) {
-        ArrayList data = persistence.executeQueryWithFields(table);
+        ArrayList data;
+        try {
+            data = persistence.executeQueryWithFields(table);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            return null;
+        }
         if (data != null) {
             return (String[]) data.get(0);
         } else {
             return null;
         }
+    }
+
+    public boolean createTable(String table, ArrayList<JCreateTablePanel> fields) {
+
+        for (JCreateTablePanel row : fields) {
+            String fieldName = row.txtRowName.getText().toString();
+            if (fieldName.equals("") || fieldName.length() > 15) {
+                return false;
+            }
+        }
+        try {
+            return persistence.createTable(table, fields, actualDatabase);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
+
+    public boolean dropTable(String name) {
+        try {
+            return persistence.dropTable(name, actualDatabase);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Write a valid name.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
+
+    public boolean dropDatabase(String name) {
+        try {
+            return persistence.dropDatabase(name);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Write a valid name.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
+
+    public void changeDatabase(String database) {
+        try {
+            persistence.changeDatabase(database);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public boolean createDatabase(String database) {
+        return persistence.createDatabase(database);
     }
 }

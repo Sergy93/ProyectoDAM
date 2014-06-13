@@ -1,5 +1,6 @@
 package bbdd;
 
+import gestor.JCreateTablePanel;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -8,9 +9,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import javax.swing.JOptionPane;
 
 /**
@@ -57,14 +55,9 @@ public final class PersistenceWrapper {
      *
      * @param database
      */
-    public void changeDatabase(String database) {
-        try {
-            this.conn = DriverManager.getConnection(DB_URL + database, DB_USER, DB_PASS);
-            ObjectManager.actualDatabase = database;
-
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
-        }
+    public void changeDatabase(String database) throws SQLException {
+        this.conn = DriverManager.getConnection(DB_URL + database, DB_USER, DB_PASS);
+        ObjectManager.setActualDatabase(database);
     }
 
     /**
@@ -125,8 +118,12 @@ public final class PersistenceWrapper {
      */
     public ArrayList<String> getRows(String table) {
         String sql = "SELECT * FROM " + table;
-
-        return executeQueryWithFields(sql);
+        try {
+            return executeQueryWithFields(sql);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            return null;
+        }
     }
 
     /**
@@ -134,9 +131,10 @@ public final class PersistenceWrapper {
      *
      * @param table
      * @return
+     * @throws java.sql.SQLException
      */
-    public ArrayList<String> getRowCount(String table) {
-        changeDatabase(ObjectManager.actualDatabase);
+    public ArrayList<String> getRowCount(String table, String database) throws SQLException {
+        changeDatabase(database);
         String sql = "SELECT count(*) FROM " + table;
 
         return executeQuery(sql);
@@ -150,9 +148,15 @@ public final class PersistenceWrapper {
     public String[] getTableFields(String table) {
         String headerSql = "SELECT * FROM " + table + " LIMIT 1;";
 
-        ArrayList result = executeQueryWithFields(headerSql);
+        ArrayList result;
+        try {
+            result = executeQueryWithFields(headerSql);
+            return (String[]) result.get(0);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            return null;
+        }
 
-        return (String[]) result.get(0);
     }
 
     /**
@@ -187,47 +191,43 @@ public final class PersistenceWrapper {
      * @param sql
      * @return
      */
-    public ArrayList executeQueryWithFields(String sql) {
+    public ArrayList executeQueryWithFields(String sql) throws SQLException {
 
         ArrayList result = new ArrayList();
         String[][] rows;
         String[] headers;
-        try {
-            stmt = conn.prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery();
-            ResultSetMetaData metaData = rs.getMetaData();
 
-            int columnCount = metaData.getColumnCount();
-            rs.last();
-            int rowCount = rs.getRow();
-            rs.beforeFirst();
+        stmt = conn.prepareStatement(sql);
+        ResultSet rs = stmt.executeQuery();
+        ResultSetMetaData metaData = rs.getMetaData();
 
-            headers = new String[columnCount];
-            rows = new String[columnCount][rowCount];
+        int columnCount = metaData.getColumnCount();
+        rs.last();
+        int rowCount = rs.getRow();
+        rs.beforeFirst();
 
-            for (int i = 1; i <= columnCount; i++) {
-                String colName = metaData.getColumnName(i);
-                headers[i - 1] = colName;
-            }
+        headers = new String[columnCount];
+        rows = new String[columnCount][rowCount];
 
-            ArrayList<String[]> rowsList = new ArrayList();
-            while (rs.next()) {
-                String[] rowArray = new String[columnCount];
-                for (int i = 0; i < rowArray.length; i++) {
-                    rowArray[i] = rs.getString(i + 1);
-                }
-                rowsList.add(rowArray);
-            }
-
-            result.add(headers);
-            result.add(rowsList);
-
-            return result;
-
-        } catch (SQLException | NullPointerException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
-            return null;
+        for (int i = 1; i <= columnCount; i++) {
+            String colName = metaData.getColumnName(i);
+            headers[i - 1] = colName;
         }
+
+        ArrayList<String[]> rowsList = new ArrayList();
+        while (rs.next()) {
+            String[] rowArray = new String[columnCount];
+            for (int i = 0; i < rowArray.length; i++) {
+                rowArray[i] = rs.getString(i + 1);
+            }
+            rowsList.add(rowArray);
+        }
+
+        result.add(headers);
+        result.add(rowsList);
+
+        return result;
+
     }
 
     /**
@@ -237,7 +237,7 @@ public final class PersistenceWrapper {
      * @param fields
      * @return
      */
-    public boolean insertSql(String table, String[] fields) {
+    public boolean insertSql(String table, String[] fields) throws SQLException {
 
         String[] headers = getTableFields(table);
 
@@ -258,13 +258,9 @@ public final class PersistenceWrapper {
         }
 
         String sql = "INSERT INTO " + table + " (" + headerString + ") VALUES (" + valueString + ");";
-        try {
-            stmt.execute(sql);
-            return true;
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
+        stmt.execute(sql);
+
+        return true;
 
     }
 
@@ -273,16 +269,12 @@ public final class PersistenceWrapper {
      * @param table
      * @param values
      * @return
+     * @throws java.sql.SQLException
      */
-    public boolean deleteSql(String table, String[] values) {
-        try {
-            String sql = "DELETE FROM " + table + " WHERE " + values[0] + " = '" + values[1] + "';";
-            stmt.execute(sql);
-            return true;
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
+    public boolean deleteSql(String table, String[] values) throws SQLException {
+        String sql = "DELETE FROM " + table + " WHERE " + values[0] + " = '" + values[1] + "';";
+        stmt.execute(sql);
+        return true;
     }
 
     /**
@@ -293,68 +285,48 @@ public final class PersistenceWrapper {
      * @param oldValue
      * @param newValue
      * @return
+     * @throws java.sql.SQLException
      */
-    public boolean sqlUpdate(String table, String field, String oldValue, String newValue) {
+    public boolean sqlUpdate(String table, String field, String oldValue, String newValue) throws SQLException {
         String sql = "UPDATE " + table + " SET " + field + " = '" + newValue + "' WHERE " + field + " = '" + oldValue + "';";
 
-        try {
-            int rows = stmt.executeUpdate(sql);
+        int rows = stmt.executeUpdate(sql);
 
-            stmt.close();
+        stmt.close();
 
-            return rows >= 1;
-
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
+        return rows >= 1;
 
     }
 
     /**
      *
-     * @param name
+     * @param tableName
      * @param fields
      * @return
+     * @throws java.sql.SQLException
      */
-    public boolean createTable(String name, HashMap fields) {
-        changeDatabase(ObjectManager.actualDatabase);
+    public boolean createTable(String tableName, ArrayList<JCreateTablePanel> fields, String database) throws SQLException {
+        changeDatabase(database);
 
-        String sql = "CREATE TABLE IF NOT EXISTS " + name + "(";
-        Iterator it = fields.entrySet().iterator();
-
-        //Get the first value
-        Map.Entry firstValue = (Map.Entry) it.next();
-        sql += firstValue.getValue() + " " + firstValue.getKey();
-        it.remove();
-
-        //Continue iterating
-        while (it.hasNext()) {
-            Map.Entry field = (Map.Entry) it.next();
-            sql += (", " + field.getValue() + " " + field.getKey());
+        String sql = "CREATE TABLE " + tableName + " (";
+        for (JCreateTablePanel row : fields) {
+            sql += row.txtRowName.getText().toString() + " " + row.cmbRowType.getSelectedItem() + ",";
         }
 
+        sql = sql.substring(0, sql.length() - 1);
         sql += ");";
-        try {
-            stmt.execute(sql);
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
+
+        stmt.execute(sql);
+
         return true;
     }
 
-    public boolean dropTable(String name) {
-        changeDatabase(ObjectManager.actualDatabase);
-        String sql = "DROP TABLE " + name + ";";
+    public boolean dropTable(String tableName, String database) throws SQLException {
+        changeDatabase(database);
+        String sql = "DROP TABLE " + tableName + ";";
 
-        if (JOptionPane.showConfirmDialog(null, "Are you sure you want to DROP the table " + name + "?", "Drop table", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.OK_OPTION) {
-            try {
-                return (stmt.executeUpdate(sql) == 0);
-            } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
-                return false;
-            }
+        if (JOptionPane.showConfirmDialog(null, "Are you sure you want to DROP the table " + tableName + "?", "Drop table", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.OK_OPTION) {
+            return (stmt.executeUpdate(sql) == 0);
         } else {
             return false;
         }
@@ -377,17 +349,13 @@ public final class PersistenceWrapper {
      * @param name
      * @return
      */
-    public boolean dropDatabase(String name) {
+    public boolean dropDatabase(String name) throws SQLException {
 
         String sql = "DROP DATABASE " + name + ";";
 
         if (JOptionPane.showConfirmDialog(null, "Are you sure you want to DROP the database " + name + "?", "Drop database", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.OK_OPTION) {
-            try {
-                return (stmt.executeUpdate(sql) == 0);
-            } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
-                return false;
-            }
+            return (stmt.executeUpdate(sql) == 0);
+
         } else {
             return false;
         }
