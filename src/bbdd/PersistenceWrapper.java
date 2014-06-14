@@ -54,9 +54,13 @@ public final class PersistenceWrapper {
      * Changes the actual database pointer.
      *
      * @param database
+     * @throws java.sql.SQLException
      */
     public void changeDatabase(String database) throws SQLException {
-        this.conn = DriverManager.getConnection(DB_URL + database, DB_USER, DB_PASS);
+        // this.conn = DriverManager.getConnection(DB_URL + database, DB_USER, DB_PASS);
+        String sql = "USE " + database + "; ";
+        stmt.executeUpdate(sql);
+
         ObjectManager.setActualDatabase(database);
     }
 
@@ -130,6 +134,7 @@ public final class PersistenceWrapper {
      * Gets the row count in a table.
      *
      * @param table
+     * @param database
      * @return
      * @throws java.sql.SQLException
      */
@@ -190,6 +195,7 @@ public final class PersistenceWrapper {
      *
      * @param sql
      * @return
+     * @throws java.sql.SQLException
      */
     public ArrayList executeQueryWithFields(String sql) throws SQLException {
 
@@ -236,6 +242,7 @@ public final class PersistenceWrapper {
      * @param table
      * @param fields
      * @return
+     * @throws java.sql.SQLException
      */
     public boolean insertSql(String table, String[] fields) throws SQLException {
 
@@ -302,21 +309,21 @@ public final class PersistenceWrapper {
      *
      * @param tableName
      * @param fields
+     * @param database
      * @return
      * @throws java.sql.SQLException
      */
     public boolean createTable(String tableName, ArrayList<JCreateTablePanel> fields, String database) throws SQLException {
+
         changeDatabase(database);
 
-        String sql = "CREATE TABLE " + tableName + " (";
+        String sql = "CREATE TABLE IF NOT EXISTS " + tableName + " (";
         for (JCreateTablePanel row : fields) {
             sql += row.txtRowName.getText().toString() + " " + row.cmbRowType.getSelectedItem() + ",";
         }
+        sql += "PRIMARY KEY (" + fields.get(0).txtRowName.getText().toString() + "));";
 
-        sql = sql.substring(0, sql.length() - 1);
-        sql += ");";
-
-        stmt.execute(sql);
+        stmt.executeUpdate(sql);
 
         return true;
     }
@@ -348,6 +355,7 @@ public final class PersistenceWrapper {
      *
      * @param name
      * @return
+     * @throws java.sql.SQLException
      */
     public boolean dropDatabase(String name) throws SQLException {
 
@@ -359,5 +367,11 @@ public final class PersistenceWrapper {
         } else {
             return false;
         }
+    }
+
+    public void renameTable(String table, String newName, String database) throws SQLException {
+        String sql = "RENAME TABLE " + table + " TO " + newName;
+
+        stmt.executeUpdate(sql);
     }
 }

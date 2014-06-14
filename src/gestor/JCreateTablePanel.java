@@ -3,14 +3,12 @@ package gestor;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.GroupLayout;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.LayoutStyle;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.PlainDocument;
 
 public class JCreateTablePanel extends JPanel {
 
@@ -18,6 +16,7 @@ public class JCreateTablePanel extends JPanel {
     public JLabel lblRowName;
     public JLabel lblRowType;
     public JTextField txtRowName;
+    public JCheckBox chkNull;
 
     public JCreateTablePanel() {
         initComponents();
@@ -32,13 +31,13 @@ public class JCreateTablePanel extends JPanel {
         txtRowName = new JTextField();
         cmbRowType = new JComboBox();
 
-        setBorder(BorderFactory.createTitledBorder("Create table"));
+        setBorder(BorderFactory.createTitledBorder(""));
 
         lblRowName.setText("Row Name:");
 
         lblRowType.setText("Row Type:");
 
-        cmbRowType.setModel(new DefaultComboBoxModel(new String[]{"INTEGER", "VARCHAR(50)", "BOOLEAN", "DATE"}));
+        cmbRowType.setModel(new DefaultComboBoxModel(new String[]{"INT(10)", "VARCHAR(50)", "BOOLEAN", "DATE"}));
 
         GroupLayout layout = new GroupLayout(this);
         this.setLayout(layout);

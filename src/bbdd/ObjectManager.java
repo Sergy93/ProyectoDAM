@@ -3,6 +3,8 @@ package bbdd;
 import gestor.JCreateTablePanel;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.JTree;
@@ -255,10 +257,12 @@ public final class ObjectManager {
 
         for (JCreateTablePanel row : fields) {
             String fieldName = row.txtRowName.getText().toString();
-            if (fieldName.equals("") || fieldName.length() > 15) {
+            if (fieldName.isEmpty() || fieldName.length() > 15 || isNumeric(fieldName)) {
+                JOptionPane.showMessageDialog(null, "The field " + fieldName + " has an invalid name.", "Length Error", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
         }
+
         try {
             return persistence.createTable(table, fields, actualDatabase);
         } catch (SQLException ex) {
@@ -296,4 +300,24 @@ public final class ObjectManager {
     public boolean createDatabase(String database) {
         return persistence.createDatabase(database);
     }
+
+    public boolean renameTable(String table, String newName) {
+        try {
+            persistence.renameTable(table, newName, actualDatabase);
+            return true;
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
+
+    public static boolean isNumeric(String str) {
+        try {
+            double d = Double.parseDouble(str);
+        } catch (NumberFormatException ex) {
+            return false;
+        }
+        return true;
+    }
+
 }
