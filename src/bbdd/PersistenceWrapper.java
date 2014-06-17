@@ -102,6 +102,13 @@ public final class PersistenceWrapper {
 
     }
 
+    public String[] getFieldsFromTable(String table) throws SQLException {
+        String sql = "SELECT 1 FROM " + table + ";";
+
+        return (String[]) executeQueryWithFields(sql).get(0);
+
+    }
+
     /**
      * Gets the list of tables in a database.
      *
@@ -203,12 +210,16 @@ public final class PersistenceWrapper {
         String[][] rows;
         String[] headers;
 
+        ResultSet rs;
+        ResultSetMetaData metaData;
+
         stmt = conn.prepareStatement(sql);
-        ResultSet rs = stmt.executeQuery();
-        ResultSetMetaData metaData = rs.getMetaData();
+        rs = stmt.executeQuery();
+        metaData = rs.getMetaData();
 
         int columnCount = metaData.getColumnCount();
         rs.last();
+
         int rowCount = rs.getRow();
         rs.beforeFirst();
 
@@ -221,6 +232,7 @@ public final class PersistenceWrapper {
         }
 
         ArrayList<String[]> rowsList = new ArrayList();
+
         while (rs.next()) {
             String[] rowArray = new String[columnCount];
             for (int i = 0; i < rowArray.length; i++) {
@@ -233,7 +245,6 @@ public final class PersistenceWrapper {
         result.add(rowsList);
 
         return result;
-
     }
 
     /**
@@ -248,23 +259,23 @@ public final class PersistenceWrapper {
 
         String[] headers = getTableFields(table);
 
-        String headerString = "";
+        String fieldsString = "";
         String valueString = "";
 
         for (String field : (String[]) headers) {
-            headerString += field.toString() + ",";
+            fieldsString += field.toString() + ",";
         }
         for (String value : fields) {
             valueString += value.toString() + ",";
         }
-        if (!headerString.equals("")) {
-            headerString = headerString.substring(0, headerString.length() - 1);
+        if (!fieldsString.equals("")) {
+            fieldsString = fieldsString.substring(0, fieldsString.length() - 1);
         }
         if (!valueString.equals("")) {
             valueString = valueString.substring(0, valueString.length() - 1);
         }
 
-        String sql = "INSERT INTO " + table + " (" + headerString + ") VALUES (" + valueString + ");";
+        String sql = "INSERT INTO " + table + " (" + fieldsString + ") VALUES (" + valueString + ");";
         stmt.execute(sql);
 
         return true;

@@ -448,7 +448,6 @@ public final class JavaDBManager extends JFrame {
             int column = tblShow.getSelectedColumn() <= 0 ? 0 : tblShow.getSelectedColumn();
 
             String cellValue = "";
-
             String columnName = "";
             String firstValueName = "";
             String columnType = tblShow.getModel().getColumnName(0);
@@ -503,8 +502,9 @@ public final class JavaDBManager extends JFrame {
                         break;
                     default:
                         //JOptionPane.showMessageDialog(null, target.getModel().getValueAt(row, column).toString(), target.getModel().getColumnName(column), 1);
-                        String newValue = JOptionPane.showInputDialog(MANAGER, "Write the new value:", cellValue);
-                        objManager.updateRowContent(tblShow, columnName, cellValue, newValue);
+                        //String newValue = JOptionPane.showInputDialog(MANAGER, "Write the new value:", cellValue);
+                        // objManager.updateRowContent(tblShow, columnName, cellValue, newValue);
+                        insertRow(ObjectManager.getActualTable());
                         break;
                 }
 
@@ -535,6 +535,11 @@ public final class JavaDBManager extends JFrame {
                         break;
 
                     default:
+                        int isDeleted = JOptionPane.showConfirmDialog(MANAGER, "You really want to delete the row with " + columnName + "=" + cellValue + "?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
+                        if (isDeleted == 0) {
+                            objManager.deleteRow(new String[]{columnName, cellValue});
+                            objManager.showRowsOnTable(tblShow, ObjectManager.getActualDatabase(), ObjectManager.getActualTable());
+                        }
                         break;
                 }
             }
@@ -570,25 +575,24 @@ public final class JavaDBManager extends JFrame {
 
         public void createTable() {
 
-            JCreateTablePanel row = new JCreateTablePanel();
             final ArrayList<JCreateTablePanel> panelsList = new ArrayList<>();
-            //final ArrayList<JCreateTablePanel> finalList;
+            final JDialog containerDialog = new JDialog(MANAGER, "New table", true);
 
-            final JDialog containerWindow = new JDialog(MANAGER, "New table", true);
+            final String tableName;
+
+            JCreateTablePanel row = new JCreateTablePanel();
 
             JPanel rowContainer = new JPanel(new GridBagLayout());
             GridBagConstraints cs = new GridBagConstraints();
 
             JLabel lblTable = new JLabel();
-
             JButton btnCreateTable = new JButton("Create Table");
 
-            Integer numberOfRows = 1;
+            Integer numberOfRows;
             Dimension rowContainerDimension;
 
-            final String tableName;
-
             tableName = JOptionPane.showInputDialog(MANAGER, "Enter the new table name", "New table", JOptionPane.QUESTION_MESSAGE);
+
             if (tableName == null) {
                 return;
             } else if (tableName.equals("")) {
@@ -601,7 +605,7 @@ public final class JavaDBManager extends JFrame {
                 JOptionPane.showMessageDialog(MANAGER, "The name cannot be numeric.", "Length Error", JOptionPane.ERROR_MESSAGE);
             }
 
-            containerWindow.setTitle(tableName);
+            containerDialog.setTitle(tableName);
 
             try {
                 numberOfRows = (int) JOptionPane.showInputDialog(MANAGER, "Enter the number of fields", "Number of fields", JOptionPane.QUESTION_MESSAGE, null, new Integer[]{1, 2, 3, 4, 5, 6}, null);
@@ -610,9 +614,7 @@ public final class JavaDBManager extends JFrame {
             }
 
             cs.fill = GridBagConstraints.HORIZONTAL;
-
             cs.gridy = 1;
-            //rowContainer.add(lblTable);
 
             for (int i = 0; i < numberOfRows; i++) {
                 row = new JCreateTablePanel();
@@ -620,7 +622,7 @@ public final class JavaDBManager extends JFrame {
                 cs.gridy = i;
                 rowContainer.add(row, cs);
 
-                containerWindow.setSize(row.getPreferredSize().width + 20, rowContainer.getPreferredSize().height + row.getPreferredSize().height);
+                containerDialog.setSize(row.getPreferredSize().width + 20, rowContainer.getPreferredSize().height + row.getPreferredSize().height);
                 panelsList.add(row);
             }
 
@@ -628,7 +630,7 @@ public final class JavaDBManager extends JFrame {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     if (objManager.createTable(tableName, panelsList)) {
-                        containerWindow.dispose();
+                        containerDialog.dispose();
                         objManager.showTablesOnDatabase(tblShow, ObjectManager.getActualDatabase());
                         objManager.loadDatabaseTree(treeDatabases);
                     }
@@ -643,17 +645,62 @@ public final class JavaDBManager extends JFrame {
 
             rowContainerDimension = rowContainer.getPreferredSize();
 
-            containerWindow.add(rowContainer);
+            containerDialog.add(rowContainer);
 
             lblTable.setLocation(rowContainerDimension.width / 2, rowContainerDimension.height / 2);
 
-            containerWindow.setSize(rowContainerDimension.width + 20, rowContainerDimension.height + row.getPreferredSize().height);
+            containerDialog.setSize(rowContainerDimension.width + 20, rowContainerDimension.height + row.getPreferredSize().height);
 
-            containerWindow.setLocationRelativeTo(MANAGER);
+            containerDialog.setLocationRelativeTo(MANAGER);
 
-            containerWindow.setResizable(false);
-            containerWindow.setVisible(true);
+            containerDialog.setResizable(false);
+            containerDialog.setVisible(true);
         }
 
+        public void insertRow(final String tableName) {
+            final JDialog containerDialog = new JDialog(MANAGER);
+
+            final ArrayList<JInsertRowPanel> panelsList = new ArrayList<>();
+
+            JInsertRowPanel row;
+
+            JButton btnInsertRow = new JButton("Insert");
+            JPanel rowContainer = new JPanel(new GridBagLayout());
+            GridBagConstraints cs = new GridBagConstraints();
+
+            String[] fields = new String[0];
+            try {
+                fields = objManager.getFieldsOnTable(tableName);
+            } catch (NullPointerException ex) {
+                
+            }
+            Dimension rowContainerDimension;
+
+            cs.fill = GridBagConstraints.HORIZONTAL;
+            cs.gridy = 1;
+
+            for (int i = 0; i < fields.length; i++) {
+                String field = fields[i];
+                row = new JInsertRowPanel(field);
+
+                cs.gridy = i;
+                rowContainer.add(row, cs);
+                containerDialog.setSize(row.getPreferredSize().width + 20, rowContainer.getPreferredSize().height + row.getPreferredSize().height);
+                panelsList.add(row);
+            }
+
+            btnInsert.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (objManager.insertIntoTable(tableName, panelsList)) {
+                        containerDialog.dispose();
+                        objManager.showTablesOnDatabase(tblShow, ObjectManager.getActualDatabase());
+                        objManager.loadDatabaseTree(treeDatabases);
+                    }
+                }
+            });
+            containerDialog.add(rowContainer);
+            containerDialog.setVisible(true);
+        }
     }
 }

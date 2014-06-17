@@ -1,6 +1,7 @@
 package bbdd;
 
 import gestor.JCreateTablePanel;
+import gestor.JInsertRowPanel;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -49,6 +50,10 @@ public final class ObjectManager {
 
     public static String getActualDatabase() {
         return actualDatabase;
+    }
+
+    public static String getActualTable() {
+        return actualTable;
     }
 
     /**
@@ -209,11 +214,17 @@ public final class ObjectManager {
     /**
      *
      * @param table
-     * @param values
+     * @param panels
      * @return
      */
-    public boolean insertIntoTable(String table, String[] values) {
+    public boolean insertIntoTable(String table, ArrayList<JInsertRowPanel> panels) {
         try {
+            String[] values = new String[panels.size()];
+
+            for (JInsertRowPanel rowPanel : panels) {
+                values[0] = rowPanel.lblName.getText().toString();
+                values[1] = rowPanel.txtName.getText().toString();
+            }
             return persistence.insertSql(table, values);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
@@ -239,15 +250,15 @@ public final class ObjectManager {
     }
 
     public String[] getFieldsOnTable(String table) {
-        ArrayList data;
+        String[] data;
         try {
-            data = persistence.executeQueryWithFields(table);
+            data = persistence.getFieldsFromTable(table);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
             return null;
         }
-        if (data != null) {
-            return (String[]) data.get(0);
+        if (data != null && !data[0].equals("1")) {
+            return (String[]) data;
         } else {
             return null;
         }
@@ -305,6 +316,15 @@ public final class ObjectManager {
         try {
             persistence.renameTable(table, newName, actualDatabase);
             return true;
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
+
+    public boolean deleteRow(String[] values) {
+        try {
+            return persistence.deleteSql(actualTable, values);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
             return false;
