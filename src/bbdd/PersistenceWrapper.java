@@ -95,17 +95,10 @@ public final class PersistenceWrapper {
      * @param database
      * @return
      */
-    public ArrayList<String> getTablesCount(String database) {
+    public ArrayList<String> getTablesCount(String database) throws SQLException {
         String sql = "SELECT count(table_name) FROM information_schema.tables WHERE table_type = 'base table' AND table_schema='" + database + "'";
 
         return executeQuery(sql);
-
-    }
-
-    public String[] getFieldsFromTable(String table) throws SQLException {
-        String sql = "SELECT 1 FROM " + table + ";";
-
-        return (String[]) executeQueryWithFields(sql).get(0);
 
     }
 
@@ -115,7 +108,7 @@ public final class PersistenceWrapper {
      * @param database
      * @return
      */
-    public ArrayList<String> getTables(String database) {
+    public ArrayList<String> getTables(String database) throws SQLException {
         String sql = "SELECT table_name FROM information_schema.tables WHERE table_type = 'base table' AND table_schema='" + database + "'";
 
         return executeQuery(sql);
@@ -158,12 +151,19 @@ public final class PersistenceWrapper {
      * @return
      */
     public String[] getTableFields(String table) {
-        String headerSql = "SELECT * FROM " + table + " LIMIT 1;";
+        String headerSql = "SHOW COLUMNS FROM " + table;
 
-        ArrayList result;
+        ArrayList<String> result;
+
         try {
-            result = executeQueryWithFields(headerSql);
-            return (String[]) result.get(0);
+            result = executeQuery(headerSql);
+
+            String[] fields = new String[result.size()];
+            for (int i = 0; i < result.size(); i++) {
+                fields[i] = result.get(i);
+            }
+            return fields;
+
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
             return null;
@@ -178,21 +178,16 @@ public final class PersistenceWrapper {
      * @param sql
      * @return
      */
-    public ArrayList<String> executeQuery(String sql) {
-        try {
-            stmt = conn.prepareStatement(sql);
-            ArrayList result;
-            try (ResultSet rs = stmt.executeQuery()) {
-                result = new ArrayList();
-                while (rs.next()) {
-                    result.add(rs.getString(1));
-                }
-                return result;
-            }
+    public ArrayList<String> executeQuery(String sql) throws SQLException {
 
-        } catch (SQLException | NullPointerException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
-            return null;
+        stmt = conn.prepareStatement(sql);
+        ArrayList result;
+        try (ResultSet rs = stmt.executeQuery()) {
+            result = new ArrayList();
+            while (rs.next()) {
+                result.add(rs.getString(1));
+            }
+            return result;
         }
 
     }

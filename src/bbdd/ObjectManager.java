@@ -4,8 +4,6 @@ import gestor.JCreateTablePanel;
 import gestor.JInsertRowPanel;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.JTree;
@@ -74,7 +72,12 @@ public final class ObjectManager {
 
         if (databases != null) {
             for (Object database : databases) {
-                ArrayList<String> tables = persistence.getTables(database.toString());
+                ArrayList<String> tables = null;
+                try {
+                    tables = persistence.getTables(database.toString());
+                } catch (SQLException ex) {
+                    JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+                }
                 DefaultMutableTreeNode dbNode = new DefaultMutableTreeNode(database.toString());
 
                 for (String table : tables) {
@@ -102,7 +105,12 @@ public final class ObjectManager {
         };
         for (int i = 0; i < databases.size(); i++) {
             String database = databases.get(i).toString();
-            String tableText = countToString(persistence.getTablesCount(database).toString()) + " tables.";
+            String tableText = null;
+            try {
+                tableText = countToString(persistence.getTablesCount(database).toString()) + " tables.";
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            }
 
             contentDatabases[i][0] = databases.get(i);
             contentDatabases[i][1] = tableText;
@@ -117,7 +125,12 @@ public final class ObjectManager {
      * @param database
      */
     public void showTablesOnDatabase(JTable jTable, String database) {
-        ArrayList tables = persistence.getTables(database);
+        ArrayList tables = null;
+        try {
+            tables = persistence.getTables(database);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+        }
         Object[][] contentTables = new Object[tables.size()][2];
         String[] fields = new String[]{
             "Table", "Number of Rows"
@@ -208,7 +221,12 @@ public final class ObjectManager {
      * @return
      */
     public boolean executeSQL(String sql) {
-        return (persistence.executeQuery(sql) != null);
+        try {
+            return (persistence.executeQuery(sql) != null);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
     }
 
     /**
@@ -251,12 +269,7 @@ public final class ObjectManager {
 
     public String[] getFieldsOnTable(String table) {
         String[] data;
-        try {
-            data = persistence.getFieldsFromTable(table);
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
-            return null;
-        }
+        data = persistence.getTableFields(table);
         if (data != null && !data[0].equals("1")) {
             return (String[]) data;
         } else {

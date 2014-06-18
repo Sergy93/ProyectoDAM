@@ -672,7 +672,7 @@ public final class JavaDBManager extends JFrame {
             try {
                 fields = objManager.getFieldsOnTable(tableName);
             } catch (NullPointerException ex) {
-                
+
             }
             Dimension rowContainerDimension;
 
@@ -699,6 +699,7 @@ public final class JavaDBManager extends JFrame {
                     }
                 }
             });
+
             containerDialog.add(rowContainer);
             containerDialog.setVisible(true);
         }
