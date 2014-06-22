@@ -1,17 +1,21 @@
 package db;
 
+import static java.lang.Character.UnicodeScript.of;
+import static java.lang.ProcessBuilder.Redirect.to;
 import ui.JCreateTablePanel;
 import ui.JInsertRowPanel;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.JTree;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 
 /**
@@ -37,9 +41,8 @@ public final class ObjectManager {
         refreshDatabaseList();
     }
 
-    /**
-     *
-     * @return
+    /*
+     * Getters and Setters
      */
     public static ObjectManager getInstance() {
         return INSTANCE;
@@ -82,8 +85,16 @@ public final class ObjectManager {
                     JOptionPane.showMessageDialog(null, "There has been an error retrieving the database list.", "SQL Error", JOptionPane.ERROR_MESSAGE);
                     Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                DefaultMutableTreeNode dbNode = new DefaultMutableTreeNode(database.toString());
+                DefaultMutableTreeNode dbNode = new DefaultMutableTreeNode(new String[]{database.toString()});
+                /*
+                 ImageIcon icon = new ImageIcon("images/db.png");
 
+                 DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
+
+                 renderer.setLeafIcon(icon);
+
+                 tree.setCellRenderer(renderer);
+                 */
                 for (String table : tables) {
                     DefaultMutableTreeNode tableNode = new DefaultMutableTreeNode(table);
                     dbNode.add(tableNode);
@@ -248,10 +259,11 @@ public final class ObjectManager {
         try {
             String[] values = new String[panels.size()];
 
-            for (JInsertRowPanel rowPanel : panels) {
-                values[0] = rowPanel.lblName.getText().toString();
-                values[1] = rowPanel.txtName.getText().toString();
+            for (int i = 0; i < panels.size(); i++) {
+                JInsertRowPanel rowPanel = panels.get(i);
+                values[i] = rowPanel.txtName.getText().toString();
             }
+
             return persistence.insertSql(table, values);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, "Invalid values to insert.", "SQL Error", JOptionPane.ERROR_MESSAGE);
@@ -278,9 +290,9 @@ public final class ObjectManager {
         }
     }
 
-    public HashMap getFieldsOnTable(String table) {
-        HashMap data = persistence.getTableFields(table);
-        if (data != null && !data.get(0).equals("1")) {
+    public TreeMap<String, String> getFieldsOnTable(String table) {
+        TreeMap<String, String> data = persistence.getTableFields(table);
+        if (data != null) {
             return data;
         } else {
             return null;

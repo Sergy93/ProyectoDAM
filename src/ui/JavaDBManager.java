@@ -13,6 +13,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JButton;
@@ -63,10 +64,6 @@ public final class JavaDBManager extends JFrame {
         btnInsert = new javax.swing.JButton();
         btnRename = new javax.swing.JButton();
         btnDelete = new javax.swing.JButton();
-        pnlInfo = new javax.swing.JPanel();
-        pnlImport = new javax.swing.JPanel();
-        pnlExport = new javax.swing.JPanel();
-        pnlBackup = new javax.swing.JPanel();
         btnSqlSelect = new javax.swing.JButton();
         btnSqlUpdate = new javax.swing.JButton();
         btnSqlDelete = new javax.swing.JButton();
@@ -138,58 +135,6 @@ public final class JavaDBManager extends JFrame {
         );
 
         tbpTabs.addTab("Databases", pnlDatabases);
-
-        javax.swing.GroupLayout pnlInfoLayout = new javax.swing.GroupLayout(pnlInfo);
-        pnlInfo.setLayout(pnlInfoLayout);
-        pnlInfoLayout.setHorizontalGroup(
-            pnlInfoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 766, Short.MAX_VALUE)
-        );
-        pnlInfoLayout.setVerticalGroup(
-            pnlInfoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 453, Short.MAX_VALUE)
-        );
-
-        tbpTabs.addTab("DB Info", pnlInfo);
-
-        javax.swing.GroupLayout pnlImportLayout = new javax.swing.GroupLayout(pnlImport);
-        pnlImport.setLayout(pnlImportLayout);
-        pnlImportLayout.setHorizontalGroup(
-            pnlImportLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 766, Short.MAX_VALUE)
-        );
-        pnlImportLayout.setVerticalGroup(
-            pnlImportLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 453, Short.MAX_VALUE)
-        );
-
-        tbpTabs.addTab("Import", pnlImport);
-
-        javax.swing.GroupLayout pnlExportLayout = new javax.swing.GroupLayout(pnlExport);
-        pnlExport.setLayout(pnlExportLayout);
-        pnlExportLayout.setHorizontalGroup(
-            pnlExportLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 766, Short.MAX_VALUE)
-        );
-        pnlExportLayout.setVerticalGroup(
-            pnlExportLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 453, Short.MAX_VALUE)
-        );
-
-        tbpTabs.addTab("Export", pnlExport);
-
-        javax.swing.GroupLayout pnlBackupLayout = new javax.swing.GroupLayout(pnlBackup);
-        pnlBackup.setLayout(pnlBackupLayout);
-        pnlBackupLayout.setHorizontalGroup(
-            pnlBackupLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 766, Short.MAX_VALUE)
-        );
-        pnlBackupLayout.setVerticalGroup(
-            pnlBackupLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 453, Short.MAX_VALUE)
-        );
-
-        tbpTabs.addTab("Backup", pnlBackup);
 
         btnSqlSelect.setText("Select");
 
@@ -316,11 +261,7 @@ public final class JavaDBManager extends JFrame {
     private javax.swing.JMenuItem mnShowLog;
     private javax.swing.JMenuItem mnSql;
     private javax.swing.JMenuItem mnUsers;
-    private javax.swing.JPanel pnlBackup;
     private javax.swing.JPanel pnlDatabases;
-    private javax.swing.JPanel pnlExport;
-    private javax.swing.JPanel pnlImport;
-    private javax.swing.JPanel pnlInfo;
     private javax.swing.JScrollPane scrollDb;
     private javax.swing.JScrollPane scrollShow;
     private javax.swing.JScrollPane scrollSql;
@@ -356,25 +297,23 @@ public final class JavaDBManager extends JFrame {
         btnRename.addActionListener(intManager);
 
         treeDatabases.addTreeSelectionListener(intManager);
-
-        //if(!Variables.loginOK) {launchLogin();}
     }
 
     /**
      * @author Sergio Jimenez Romero
      *
-     * This class handles all events related to the UI interaction.
+     * This class handles all events related to the main frame interaction.
      */
     private class InterfaceManager extends MouseAdapter implements ActionListener, TreeSelectionListener {
 
-        //Tratamiento botones
+        //Checks buttons from menu and SQL text panel.
         @Override
         public void actionPerformed(ActionEvent e) {
             checkMenuButtons(e);
             checkSqlButtons(e);
-
         }
 
+        //Handles tree db selection.
         @Override
         public void valueChanged(TreeSelectionEvent e) {
             TreePath path = e.getPath();
@@ -392,6 +331,7 @@ public final class JavaDBManager extends JFrame {
             }
         }
 
+        //Handles clicking events on the main JTable.
         @Override
         public void mouseClicked(MouseEvent e) {
             if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
@@ -429,15 +369,14 @@ public final class JavaDBManager extends JFrame {
                         objManager.showRowsOnTable(tblShow, ObjectManager.getActualDatabase(), columnFirstValue);
                         break;
                     default:
-                        //JOptionPane.showMessageDialog(null, target.getModel().getValueAt(row, column).toString(), target.getModel().getColumnName(column), 1);
                         String newValue = JOptionPane.showInputDialog(parent, "Write the new value:", rowValue);
                         objManager.updateRowValues(tblShow, columnName, rowValue, newValue);
                         break;
                 }
-
             }
         }
 
+        //Handles action when pressing Insert,Delete and Rename buttons.
         public boolean checkMenuButtons(ActionEvent e) {
 
             int row = tblShow.getSelectedRow() < 0 ? 0 : tblShow.getSelectedRow();
@@ -497,9 +436,6 @@ public final class JavaDBManager extends JFrame {
 
                         break;
                     default:
-                        //JOptionPane.showMessageDialog(null, target.getModel().getValueAt(row, column).toString(), target.getModel().getColumnName(column), 1);
-                        //String newValue = JOptionPane.showInputDialog(MANAGER, "Write the new value:", cellValue);
-                        // objManager.updateRowContent(tblShow, columnName, cellValue, newValue);
                         insertRow(ObjectManager.getActualTable());
                         break;
                 }
@@ -569,6 +505,11 @@ public final class JavaDBManager extends JFrame {
             return returnValue;
         }
 
+        /**
+         * Shows the JCreateTable form and handles the creation of a new table
+         * 
+         */
+        
         public void createTable() {
 
             final ArrayList<JCreateTablePanel> panelsList = new ArrayList<>();
@@ -653,6 +594,11 @@ public final class JavaDBManager extends JFrame {
             containerDialog.setVisible(true);
         }
 
+        
+        /**
+         * Shows the JCreateTable form and handles the insertion of a new row.
+         * @param tableName table where we will insert the row into.
+         */
         public void insertRow(final String tableName) {
             final JDialog containerDialog = new JDialog(MANAGER, "INSERT:" + tableName, true);
 
@@ -664,7 +610,7 @@ public final class JavaDBManager extends JFrame {
             JPanel rowContainer = new JPanel(new GridBagLayout());
             GridBagConstraints cs = new GridBagConstraints();
 
-            String[] fields = new String[0];
+            TreeMap fields = new TreeMap();
             try {
                 fields = objManager.getFieldsOnTable(tableName);
             } catch (NullPointerException ex) {
@@ -675,14 +621,14 @@ public final class JavaDBManager extends JFrame {
             cs.fill = GridBagConstraints.HORIZONTAL;
             cs.gridy = 1;
 
-            for (int i = 0; i < fields.length; i++) {
-                String field = fields[i];
-                row = new JInsertRowPanel(field);
-
+            int i = 0;
+            for (Object field : fields.keySet().toArray()) {
+                row = new JInsertRowPanel(field.toString() + " : " + fields.get((String) field));
                 cs.gridy = i;
                 rowContainer.add(row, cs);
                 containerDialog.setSize(rowContainer.getPreferredSize().width + 20, rowContainer.getPreferredSize().height + row.getPreferredSize().height);
                 panelsList.add(row);
+                i++;
             }
 
             btnInsertRow.addActionListener(new ActionListener() {

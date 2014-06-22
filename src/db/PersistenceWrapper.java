@@ -9,7 +9,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
@@ -61,7 +61,6 @@ public final class PersistenceWrapper {
      * @throws java.sql.SQLException
      */
     public void changeDatabase(String database) throws SQLException {
-        // this.conn = DriverManager.getConnection(DB_URL + database, DB_USER, DB_PASS);
         String sql = "USE " + database + "; ";
         stmt.executeUpdate(sql);
 
@@ -99,6 +98,7 @@ public final class PersistenceWrapper {
      *
      * @param database
      * @return
+     * @throws java.sql.SQLException
      */
     public ArrayList<String> getTablesCount(String database) throws SQLException {
         String sql = "SELECT count(table_name) FROM information_schema.tables WHERE table_type = 'base table' AND table_schema='" + database + "'";
@@ -112,6 +112,7 @@ public final class PersistenceWrapper {
      *
      * @param database
      * @return
+     * @throws java.sql.SQLException
      */
     public ArrayList<String> getTables(String database) throws SQLException {
         String sql = "SELECT table_name FROM information_schema.tables WHERE table_type = 'base table' AND table_schema='" + database + "'";
@@ -156,12 +157,12 @@ public final class PersistenceWrapper {
      * @param table
      * @return
      */
-    public HashMap getTableFields(String table) {
+    public TreeMap<String, String> getTableFields(String table) {
         String headerSql = "SHOW COLUMNS FROM " + table;
 
         try {
 
-            HashMap fields = new HashMap();
+            TreeMap<String, String> fields = new TreeMap<>();
             try (ResultSet rs = stmt.executeQuery(headerSql)) {
                 while (rs.next()) {
                     String name = rs.getString("Field");
@@ -185,6 +186,7 @@ public final class PersistenceWrapper {
      *
      * @param sql
      * @return
+     * @throws java.sql.SQLException
      */
     public ArrayList<String> executeQuery(String sql) throws SQLException {
 
@@ -254,26 +256,35 @@ public final class PersistenceWrapper {
      * Executes a SQL insert into the database.
      *
      * @param table
-     * @param fields
+     * @param values
      * @return
      * @throws java.sql.SQLException
      */
-    public boolean insertSql(String table, String[] fields) throws SQLException {
+    public boolean insertSql(String table, String[] values) throws SQLException {
 
-        HashMap headers = getTableFields(table);
+        TreeMap<String, String> headers = getTableFields(table);
 
         String fieldsString = "";
         String valueString = "";
 
-        String[] fieldNames = (String[]) headers.keySet().toArray();
-        String[] fieldTypes = (String[]) headers.values().toArray();
-        
-        for (String field : fieldNames) {
+        Object[] fieldsArray = headers.keySet().toArray();
+        Object[] typesArray = headers.values().toArray();
 
+        for (Object field : fieldsArray) {
             fieldsString += field.toString() + ",";
         }
-        for (String value : fields) {
-            valueString += "'" + value.toString() + "',";
+        for (int i = 0; i < values.length; i++) {
+            String value = values[i];
+
+            String type = typesArray[i].toString();
+            if (type.contains("int") || type.contains("date") || type.contains("bool")) {
+                valueString += value.toString() + ",";
+            } else {
+                valueString += "'" + value.toString() + "',";
+            }
+            if (value.toString().contains("/")) {
+                throw new SQLException("Invalid date format.");
+            }
         }
         if (!fieldsString.equals("")) {
             fieldsString = fieldsString.substring(0, fieldsString.length() - 1);
