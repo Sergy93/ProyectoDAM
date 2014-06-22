@@ -1,7 +1,7 @@
-package gestor;
+package ui;
 
-import bbdd.ObjectManager;
-import bbdd.PersistenceWrapper;
+import db.ObjectManager;
+import db.PersistenceWrapper;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.EventQueue;
@@ -357,11 +357,7 @@ public final class JavaDBManager extends JFrame {
 
         treeDatabases.addTreeSelectionListener(intManager);
 
-        if (Variables.isAdminActive) {
-            mnShowLog.setEnabled(true);
-        }
         //if(!Variables.loginOK) {launchLogin();}
-
     }
 
     /**
@@ -435,7 +431,7 @@ public final class JavaDBManager extends JFrame {
                     default:
                         //JOptionPane.showMessageDialog(null, target.getModel().getValueAt(row, column).toString(), target.getModel().getColumnName(column), 1);
                         String newValue = JOptionPane.showInputDialog(parent, "Write the new value:", rowValue);
-                        objManager.updateRowContent(tblShow, columnName, rowValue, newValue);
+                        objManager.updateRowValues(tblShow, columnName, rowValue, newValue);
                         break;
                 }
 
@@ -658,11 +654,11 @@ public final class JavaDBManager extends JFrame {
         }
 
         public void insertRow(final String tableName) {
-            final JDialog containerDialog = new JDialog(MANAGER);
+            final JDialog containerDialog = new JDialog(MANAGER, "INSERT:" + tableName, true);
 
             final ArrayList<JInsertRowPanel> panelsList = new ArrayList<>();
 
-            JInsertRowPanel row;
+            JInsertRowPanel row = new JInsertRowPanel("");
 
             JButton btnInsertRow = new JButton("Insert");
             JPanel rowContainer = new JPanel(new GridBagLayout());
@@ -672,7 +668,7 @@ public final class JavaDBManager extends JFrame {
             try {
                 fields = objManager.getFieldsOnTable(tableName);
             } catch (NullPointerException ex) {
-
+                Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
             }
             Dimension rowContainerDimension;
 
@@ -685,11 +681,11 @@ public final class JavaDBManager extends JFrame {
 
                 cs.gridy = i;
                 rowContainer.add(row, cs);
-                containerDialog.setSize(row.getPreferredSize().width + 20, rowContainer.getPreferredSize().height + row.getPreferredSize().height);
+                containerDialog.setSize(rowContainer.getPreferredSize().width + 20, rowContainer.getPreferredSize().height + row.getPreferredSize().height);
                 panelsList.add(row);
             }
 
-            btnInsert.addActionListener(new ActionListener() {
+            btnInsertRow.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     if (objManager.insertIntoTable(tableName, panelsList)) {
@@ -699,8 +695,16 @@ public final class JavaDBManager extends JFrame {
                     }
                 }
             });
+            cs.gridy += 1;
+            rowContainer.add(btnInsertRow, cs);
+            containerDialog.setSize(rowContainer.getPreferredSize().width + 20, rowContainer.getPreferredSize().height + btnInsertRow.getPreferredSize().height);
+
+            rowContainerDimension = rowContainer.getPreferredSize();
 
             containerDialog.add(rowContainer);
+            containerDialog.setResizable(false);
+            containerDialog.setLocationRelativeTo(MANAGER);
+            containerDialog.setSize(rowContainerDimension.width + 20, rowContainerDimension.height + row.getPreferredSize().height);
             containerDialog.setVisible(true);
         }
     }

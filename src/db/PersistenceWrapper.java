@@ -1,6 +1,6 @@
-package bbdd;
+package db;
 
-import gestor.JCreateTablePanel;
+import ui.JCreateTablePanel;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -9,6 +9,9 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 
 /**
@@ -38,7 +41,8 @@ public final class PersistenceWrapper {
 
             conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
         } catch (ClassNotFoundException | SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "There has been an error connecting to the database, please check your credentials.", "", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -84,7 +88,8 @@ public final class PersistenceWrapper {
             return result;
 
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "There has been an error listing the databases.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
             return null;
         }
     }
@@ -125,7 +130,8 @@ public final class PersistenceWrapper {
         try {
             return executeQueryWithFields(sql);
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "We cannot retrieve rows for table " + table + ", sorry for inconveniences.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
             return null;
         }
     }
@@ -150,22 +156,24 @@ public final class PersistenceWrapper {
      * @param table
      * @return
      */
-    public String[] getTableFields(String table) {
+    public HashMap getTableFields(String table) {
         String headerSql = "SHOW COLUMNS FROM " + table;
 
-        ArrayList<String> result;
-
         try {
-            result = executeQuery(headerSql);
 
-            String[] fields = new String[result.size()];
-            for (int i = 0; i < result.size(); i++) {
-                fields[i] = result.get(i);
+            HashMap fields = new HashMap();
+            try (ResultSet rs = stmt.executeQuery(headerSql)) {
+                while (rs.next()) {
+                    String name = rs.getString("Field");
+                    String type = rs.getString("Type");
+                    fields.put(name, type);
+                }
             }
             return fields;
 
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "There has been an error retrieving fields for table " + table, "SQL Error", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
             return null;
         }
 
@@ -252,16 +260,20 @@ public final class PersistenceWrapper {
      */
     public boolean insertSql(String table, String[] fields) throws SQLException {
 
-        String[] headers = getTableFields(table);
+        HashMap headers = getTableFields(table);
 
         String fieldsString = "";
         String valueString = "";
 
-        for (String field : (String[]) headers) {
+        String[] fieldNames = (String[]) headers.keySet().toArray();
+        String[] fieldTypes = (String[]) headers.values().toArray();
+        
+        for (String field : fieldNames) {
+
             fieldsString += field.toString() + ",";
         }
         for (String value : fields) {
-            valueString += value.toString() + ",";
+            valueString += "'" + value.toString() + "',";
         }
         if (!fieldsString.equals("")) {
             fieldsString = fieldsString.substring(0, fieldsString.length() - 1);
@@ -353,6 +365,7 @@ public final class PersistenceWrapper {
             return (stmt.executeUpdate(sql) == 0);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, "Write a valid name.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
             return false;
         }
     }

@@ -1,9 +1,12 @@
-package bbdd;
+package db;
 
-import gestor.JCreateTablePanel;
-import gestor.JInsertRowPanel;
+import ui.JCreateTablePanel;
+import ui.JInsertRowPanel;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.JTree;
@@ -76,7 +79,8 @@ public final class ObjectManager {
                 try {
                     tables = persistence.getTables(database.toString());
                 } catch (SQLException ex) {
-                    JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "There has been an error retrieving the database list.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+                    Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 DefaultMutableTreeNode dbNode = new DefaultMutableTreeNode(database.toString());
 
@@ -109,7 +113,8 @@ public final class ObjectManager {
             try {
                 tableText = countToString(persistence.getTablesCount(database).toString()) + " tables.";
             } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "There has been an error retrieving the database list.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+                Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
             }
 
             contentDatabases[i][0] = databases.get(i);
@@ -129,7 +134,8 @@ public final class ObjectManager {
         try {
             tables = persistence.getTables(database);
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "There has been an error retrieving the list of tables.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
         }
         Object[][] contentTables = new Object[tables.size()][2];
         String[] fields = new String[]{
@@ -138,7 +144,8 @@ public final class ObjectManager {
         try {
             persistence.changeDatabase(database);
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "We cannot change the database connection.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
         }
         actualDatabase = database;
 
@@ -152,7 +159,8 @@ public final class ObjectManager {
                 contentTables[i][1] = tableText;
 
             } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "There has been an error retrieving the rows for this table.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+                Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         fillTableWithContents(jTable, contentTables, fields);
@@ -224,7 +232,8 @@ public final class ObjectManager {
         try {
             return (persistence.executeQuery(sql) != null);
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "There has been an error executing your order.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
             return false;
         }
     }
@@ -245,7 +254,8 @@ public final class ObjectManager {
             }
             return persistence.insertSql(table, values);
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Invalid values to insert.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
             return false;
         }
     }
@@ -257,21 +267,21 @@ public final class ObjectManager {
      * @param oldValue
      * @param newValue
      */
-    public void updateRowContent(JTable jTable, String field, String oldValue, String newValue) {
+    public void updateRowValues(JTable jTable, String field, String oldValue, String newValue) {
         try {
             if (persistence.sqlUpdate(actualTable, field, oldValue, newValue)) {
                 showRowsOnTable(jTable, actualDatabase, actualTable);
             }
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Invalid replacing value.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    public String[] getFieldsOnTable(String table) {
-        String[] data;
-        data = persistence.getTableFields(table);
-        if (data != null && !data[0].equals("1")) {
-            return (String[]) data;
+    public HashMap getFieldsOnTable(String table) {
+        HashMap data = persistence.getTableFields(table);
+        if (data != null && !data.get(0).equals("1")) {
+            return data;
         } else {
             return null;
         }
@@ -290,7 +300,8 @@ public final class ObjectManager {
         try {
             return persistence.createTable(table, fields, actualDatabase);
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "There has been an error, check your syntax.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
             return false;
         }
     }
@@ -300,6 +311,7 @@ public final class ObjectManager {
             return persistence.dropTable(name, actualDatabase);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, "Write a valid name.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
             return false;
         }
     }
@@ -309,6 +321,7 @@ public final class ObjectManager {
             return persistence.dropDatabase(name);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, "Write a valid name.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
             return false;
         }
     }
@@ -317,7 +330,8 @@ public final class ObjectManager {
         try {
             persistence.changeDatabase(database);
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "An error ocurred while changing the database connection.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -330,7 +344,8 @@ public final class ObjectManager {
             persistence.renameTable(table, newName, actualDatabase);
             return true;
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Impossible to rename, check your syntax.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
             return false;
         }
     }
@@ -339,7 +354,8 @@ public final class ObjectManager {
         try {
             return persistence.deleteSql(actualTable, values);
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "An error ocurred deleting the row.", "SQL Error", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
             return false;
         }
     }

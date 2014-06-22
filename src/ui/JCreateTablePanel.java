@@ -1,4 +1,4 @@
-package gestor;
+package ui;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
