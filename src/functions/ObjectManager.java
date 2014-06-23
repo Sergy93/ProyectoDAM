@@ -1,7 +1,6 @@
-package db;
+package functions;
 
-import static java.lang.Character.UnicodeScript.of;
-import static java.lang.ProcessBuilder.Redirect.to;
+import db.PersistenceWrapper;
 import ui.JCreateTablePanel;
 import ui.JInsertRowPanel;
 import java.sql.SQLException;
@@ -9,16 +8,17 @@ import java.util.ArrayList;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.JTree;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 
 /**
+ * This class contains a two way interaction between the UI and the database,
+ * calling components on two side and adding an abstraction layer to simplify
+ * persistence calls.
  *
  * @author Sergio Jimenez Romero
  */
@@ -61,9 +61,19 @@ public final class ObjectManager {
     }
 
     /**
-     *
+     * @author Filip Veronel Enculescu
+     * @param user
+     * @param pass
+     * @return
      */
-    private void refreshDatabaseList() {
+    public boolean login(String user, String pass) {
+        return persistence.logIn(user, pass);
+    }
+
+    /**
+     * Gets and updated list of databases.
+     */
+    public void refreshDatabaseList() {
         databases = persistence.getDatabases();
     }
 
@@ -85,16 +95,8 @@ public final class ObjectManager {
                     JOptionPane.showMessageDialog(null, "There has been an error retrieving the database list.", "SQL Error", JOptionPane.ERROR_MESSAGE);
                     Logger.getLogger(ObjectManager.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                DefaultMutableTreeNode dbNode = new DefaultMutableTreeNode(new String[]{database.toString()});
-                /*
-                 ImageIcon icon = new ImageIcon("images/db.png");
+                DefaultMutableTreeNode dbNode = new DefaultMutableTreeNode(database.toString());
 
-                 DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
-
-                 renderer.setLeafIcon(icon);
-
-                 tree.setCellRenderer(renderer);
-                 */
                 for (String table : tables) {
                     DefaultMutableTreeNode tableNode = new DefaultMutableTreeNode(table);
                     dbNode.add(tableNode);
@@ -251,6 +253,8 @@ public final class ObjectManager {
 
     /**
      *
+     * Inserts values inside RowPanels on the given table
+     *
      * @param table
      * @param panels
      * @return
@@ -274,6 +278,8 @@ public final class ObjectManager {
 
     /**
      *
+     * Updates value inside a row.
+     *
      * @param jTable
      * @param field
      * @param oldValue
@@ -290,6 +296,12 @@ public final class ObjectManager {
         }
     }
 
+    /**
+     * Gets the field (headers) on a table along with their types.
+     *
+     * @param table
+     * @return
+     */
     public TreeMap<String, String> getFieldsOnTable(String table) {
         TreeMap<String, String> data = persistence.getTableFields(table);
         if (data != null) {
@@ -299,6 +311,14 @@ public final class ObjectManager {
         }
     }
 
+    /**
+     *
+     * Creates a table into the given DB.
+     *
+     * @param table
+     * @param fields
+     * @return
+     */
     public boolean createTable(String table, ArrayList<JCreateTablePanel> fields) {
 
         for (JCreateTablePanel row : fields) {
@@ -318,6 +338,12 @@ public final class ObjectManager {
         }
     }
 
+    /**
+     * Drops the given table.
+     *
+     * @param name
+     * @return
+     */
     public boolean dropTable(String name) {
         try {
             return persistence.dropTable(name, actualDatabase);
@@ -328,6 +354,12 @@ public final class ObjectManager {
         }
     }
 
+    /**
+     * Drops the given database
+     *
+     * @param name
+     * @return
+     */
     public boolean dropDatabase(String name) {
         try {
             return persistence.dropDatabase(name);
@@ -338,6 +370,11 @@ public final class ObjectManager {
         }
     }
 
+    /**
+     * Changes the pointer to the actual database we are working on.
+     *
+     * @param database
+     */
     public void changeDatabase(String database) {
         try {
             persistence.changeDatabase(database);
@@ -347,10 +384,24 @@ public final class ObjectManager {
         }
     }
 
+    /**
+     * Creates a new database
+     *
+     * @param database
+     * @return
+     */
     public boolean createDatabase(String database) {
         return persistence.createDatabase(database);
     }
 
+    /**
+     *
+     * Renames a table to the given name.
+     *
+     * @param table
+     * @param newName
+     * @return
+     */
     public boolean renameTable(String table, String newName) {
         try {
             persistence.renameTable(table, newName, actualDatabase);
@@ -362,6 +413,12 @@ public final class ObjectManager {
         }
     }
 
+    /**
+     * Deletes a row inside a table
+     *
+     * @param values
+     * @return
+     */
     public boolean deleteRow(String[] values) {
         try {
             return persistence.deleteSql(actualTable, values);
@@ -372,6 +429,12 @@ public final class ObjectManager {
         }
     }
 
+    /**
+     * Checks if a String is numeric
+     *
+     * @param str
+     * @return
+     */
     public static boolean isNumeric(String str) {
         try {
             double d = Double.parseDouble(str);

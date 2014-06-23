@@ -1,10 +1,1 @@
-#Ignore files build by Netbeans
-#build.xml
-#build/
-#dist/
-#nbproject/private
-#manifest.mf
-
 *.class
-[Bb]uild/
-[Dd]ist/

@@ -94,6 +94,8 @@
                       <Component id="btnSqlDelete" min="-2" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="btnSqlInsert" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="btnClear" min="-2" pref="69" max="-2" attributes="0"/>
                       <EmptySpace max="32767" attributes="0"/>
                       <Component id="btnExecute" min="-2" max="-2" attributes="0"/>
                   </Group>
@@ -121,6 +123,7 @@
                   <Component id="btnSqlDelete" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="btnSqlInsert" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="btnExecute" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="btnClear" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace min="-2" pref="20" max="-2" attributes="0"/>
           </Group>
@@ -282,7 +285,7 @@
     </Component>
     <Component class="javax.swing.JButton" name="btnExecute">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Ejecutar"/>
+        <Property name="text" type="java.lang.String" value="Execute"/>
       </Properties>
     </Component>
     <Container class="javax.swing.JScrollPane" name="scrollSql">
@@ -296,5 +299,10 @@
         </Component>
       </SubComponents>
     </Container>
+    <Component class="javax.swing.JButton" name="btnClear">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Clear"/>
+      </Properties>
+    </Component>
   </SubComponents>
 </Form>

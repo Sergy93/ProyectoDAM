@@ -1,5 +1,6 @@
 package db;
 
+import functions.ObjectManager;
 import ui.JCreateTablePanel;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -8,15 +9,22 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import ui.JavaDBManager;
+import functions.LogFile;
+import static functions.LogFile.updateLogError;
 
 /**
+ * This class contains all methods related to the database interaction, and is
+ * the only one which have direct access to it.
  *
- * @author Sergio Jimenez Romero
+ * @author Sergio Jimenez Romero & Filip Enculescu
+ *
  */
 public final class PersistenceWrapper {
 
@@ -26,11 +34,10 @@ public final class PersistenceWrapper {
     private static final PersistenceWrapper INSTANCE = new PersistenceWrapper();
 
     private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
-
-    private static final String DB_USER = "root";
-    private static final String DB_PASS = "";
-
     private static final String DB_URL = "jdbc:mysql://localhost/";
+
+    private static String DB_USER = "root";
+    private static String DB_PASS = "";
 
     private Connection conn;
     private PreparedStatement stmt;
@@ -54,6 +61,7 @@ public final class PersistenceWrapper {
         return INSTANCE;
     }
 
+    // ---------- Sergio CODE -------------//
     /**
      * Changes the actual database pointer.
      *
@@ -61,6 +69,7 @@ public final class PersistenceWrapper {
      * @throws java.sql.SQLException
      */
     public void changeDatabase(String database) throws SQLException {
+
         String sql = "USE " + database + "; ";
         stmt.executeUpdate(sql);
 
@@ -76,7 +85,7 @@ public final class PersistenceWrapper {
         ArrayList result = new ArrayList();
         try {
 
-            DatabaseMetaData meta = this.conn.getMetaData();
+            DatabaseMetaData meta = conn.getMetaData();
             try (ResultSet rs = meta.getCatalogs()) {
                 while (rs.next()) {
                     String db = rs.getString("TABLE_CAT");
@@ -153,6 +162,7 @@ public final class PersistenceWrapper {
     }
 
     /**
+     * Returns the fields on a database along with their types.
      *
      * @param table
      * @return
@@ -196,6 +206,7 @@ public final class PersistenceWrapper {
             result = new ArrayList();
             while (rs.next()) {
                 result.add(rs.getString(1));
+
             }
             return result;
         }
@@ -234,6 +245,7 @@ public final class PersistenceWrapper {
         for (int i = 1; i <= columnCount; i++) {
             String colName = metaData.getColumnName(i);
             headers[i - 1] = colName;
+
         }
 
         ArrayList<String[]> rowsList = new ArrayList();
@@ -242,6 +254,7 @@ public final class PersistenceWrapper {
             String[] rowArray = new String[columnCount];
             for (int i = 0; i < rowArray.length; i++) {
                 rowArray[i] = rs.getString(i + 1);
+
             }
             rowsList.add(rowArray);
         }
@@ -301,6 +314,7 @@ public final class PersistenceWrapper {
     }
 
     /**
+     * Deletes the rows with the given parameters on a table
      *
      * @param table
      * @param values
@@ -336,6 +350,8 @@ public final class PersistenceWrapper {
 
     /**
      *
+     * Creates a table into the given database
+     *
      * @param tableName
      * @param fields
      * @param database
@@ -357,6 +373,14 @@ public final class PersistenceWrapper {
         return true;
     }
 
+    /**
+     * Drops the table with the given name
+     *
+     * @param tableName
+     * @param database
+     * @return
+     * @throws SQLException
+     */
     public boolean dropTable(String tableName, String database) throws SQLException {
         changeDatabase(database);
         String sql = "DROP TABLE " + tableName + ";";
@@ -368,6 +392,12 @@ public final class PersistenceWrapper {
         }
     }
 
+    /**
+     * Creates a database with the given name
+     *
+     * @param name
+     * @return
+     */
     public boolean createDatabase(String name) {
 
         String sql = "CREATE DATABASE " + name + ";";
@@ -382,6 +412,7 @@ public final class PersistenceWrapper {
     }
 
     /**
+     * Drops the database with the given name
      *
      * @param name
      * @return
@@ -399,9 +430,192 @@ public final class PersistenceWrapper {
         }
     }
 
+    /**
+     * Renames a table
+     *
+     * @param table
+     * @param newName
+     * @param database
+     * @throws SQLException
+     */
     public void renameTable(String table, String newName, String database) throws SQLException {
         String sql = "RENAME TABLE " + table + " TO " + newName;
 
         stmt.executeUpdate(sql);
+    }
+
+    // ----------- Filip CODE ---------------//
+    /**
+     * Method to validate User or to login
+     *
+     * @param user
+     * @param pass
+     * @return
+     */
+    public boolean logIn(String user, String pass) {
+        try {
+            Class.forName(JDBC_DRIVER);
+            conn = DriverManager.getConnection(DB_URL, user, pass);
+            DB_USER = user;
+            DB_PASS = pass;
+
+        } catch (ClassNotFoundException | SQLException ex) {
+            LogFile.updateLogError("Connection Itent", "Start JDBC_DRIVER");
+            //JOptionPane.showMessageDialog(null, ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        return true;
+    }
+
+    public ArrayList getUsers() {
+        ArrayList ar = new ArrayList();
+        String sql = "SELECT * FROM mysql.user";
+        try {
+            Statement sentencia = conn.createStatement();
+            ResultSet resul = sentencia.executeQuery(sql);  //executequerry solo para SELECT
+            while (resul.next()) {
+                ar.add(resul.getString(2) + " / Grant Priv: " + resul.getString(14));
+            }
+            resul.close();
+            sentencia.close();
+        } catch (SQLException e) {
+            updateLogError("Llenado tabla usuarios fallida", sql);
+            LogFile.updateLogError("Get Users", sql);
+        }
+        return ar;
+    }
+
+    public void newUser(String user, String pass, String perm) {
+        ArrayList ar = new ArrayList();
+        String sql = "";
+
+        if (perm == "ALL") {
+            sql = "GRANT ALL PRIVILEGES ON *.* TO '" + user + "'@'localhost' IDENTIFIED BY '" + pass + "' With Grant Option";
+        } else {
+            sql = "GRANT SELECT, INSERT, UPDATE, DELETE ON " + perm + ".* TO '" + user + "'@'localhost' IDENTIFIED BY '" + pass + "'";
+        }
+
+        try {
+            Statement sentencia = conn.createStatement();
+            ResultSet resul = sentencia.executeQuery(sql);
+
+            resul.close();// Cerrar ResultSet
+            sentencia.close();// Cerrar Statement
+        } catch (SQLException e) {
+            updateLogError("Create new user failed!!", sql);
+        }
+    }
+
+    public void deleteUser(String user) {
+        String sql = "DROP USER " + user + "@localhost";
+
+        try {
+            Statement sentencia = conn.createStatement();
+            sentencia.executeUpdate(sql);
+
+            sentencia.close();// Cerrar Statement
+        } catch (SQLException e) {
+            updateLogError("Delete " + user + " failed!!", sql);
+        }
+    }
+
+    // ------- SQL Management ----------//
+    // ------- SQL Management ----------//   
+    private void refreshTable(JavaDBManager j) {
+        if (ObjectManager.getActualTable() != null) {
+            ObjectManager.getInstance().showRowsOnTable(j.getTable(), ObjectManager.getActualDatabase(), ObjectManager.getActualTable());
+        }
+    }
+
+    private void sqlError(String e, JavaDBManager j) {
+        j.setText("<span style=\"color:red;\">ERROR: " + e + "</span>");
+    }
+
+    public boolean select(String sql, JavaDBManager j) {
+        String actualDB = ObjectManager.getActualDatabase();
+        ArrayList rowData = null;
+
+        if (actualDB == null) {
+            sqlError("No database selected!!", j);
+            return false;
+        }
+        try {
+            rowData = executeQueryWithFields(sql);
+        } catch (SQLException ex) {
+            sqlError(ex.getMessage(), j);
+        }
+
+        String table = "<table border=\"1\">";
+        ArrayList rows = null;
+        try {
+            rows = (ArrayList) rowData.get(1);
+        } catch (Exception e) {
+            return false;
+        }
+
+        for (int x = 0; x < rows.size(); x++) {
+            table = table.concat("<tr>");
+            String[] row = (String[]) rows.get(x);
+            for (int i = 0; i < row.length; i++) {
+                table = table.concat("<td>" + row[i] + "</td>");
+            }
+            table = table.concat("</tr>");
+        }
+        table = table.concat("</table>");
+        table = table.concat("<br><span style=\"color:blue;\">" + rows.size() + " - Results.</span>");
+        table = table.concat("<br><span style=\"color:blue;\">Your sql command was executed correctly.</span>");
+        j.setText(table);
+        return true;
+    }
+
+    public boolean insert(String sql, JavaDBManager j) {
+        String actualDB = ObjectManager.getActualDatabase();
+        if (actualDB == null) {
+            sqlError("No database selected!!", j);
+            return false;
+        }
+
+        try {
+            stmt.execute(sql);
+            j.setText("<span style=\"color:blue;\">Data inserted successfully!!</span>");
+            refreshTable(j);
+        } catch (SQLException ex) {
+            sqlError(ex.getMessage(), j);
+        }
+        return true;
+    }
+
+    public boolean delete(String sql, JavaDBManager j) {
+        String actualDB = ObjectManager.getActualDatabase();
+        if (actualDB == null) {
+            sqlError("No database selected!!", j);
+            return false;
+        }
+
+        try {
+            stmt.execute(sql);
+            j.setText("<span style=\"color:blue;\">Data deleted successfully!!</span>");
+            refreshTable(j);
+        } catch (SQLException ex) {
+            sqlError(ex.getMessage(), j);
+        }
+        return true;
+    }
+
+    public boolean update(String sql, JavaDBManager j) {
+        String actualDB = ObjectManager.getActualDatabase();
+        if (actualDB == null) {
+            sqlError("No database selected!!", j);
+            return false;
+        }
+
+        try {
+            stmt.execute(sql);
+            j.setText("<span style=\"color:blue;\">Data updated successfully!!</span>");
+            refreshTable(j);
+        } catch (SQLException ex) {
+            sqlError(ex.getMessage(), j);
+        }
+        return true;
     }
 }

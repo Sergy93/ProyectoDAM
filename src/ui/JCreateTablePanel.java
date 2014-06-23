@@ -10,6 +10,10 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.LayoutStyle;
 
+/**
+ *
+ * @author Sergio Jimenez
+ */
 public class JCreateTablePanel extends JPanel {
 
     public JComboBox cmbRowType;
