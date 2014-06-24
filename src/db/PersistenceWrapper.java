@@ -1,5 +1,6 @@
 package db;
 
+import static com.sun.corba.se.spi.presentation.rmi.StubAdapter.request;
 import functions.ObjectManager;
 import ui.JCreateTablePanel;
 import java.sql.Connection;
@@ -18,6 +19,8 @@ import javax.swing.JOptionPane;
 import ui.JavaDBManager;
 import functions.LogFile;
 import static functions.LogFile.updateLogError;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * This class contains all methods related to the database interaction, and is
@@ -295,7 +298,7 @@ public final class PersistenceWrapper {
             } else {
                 valueString += "'" + value.toString() + "',";
             }
-            if (value.toString().contains("/")) {
+            if (type.contains("date") && value.toString().contains("/")) {
                 throw new SQLException("Invalid date format.");
             }
         }

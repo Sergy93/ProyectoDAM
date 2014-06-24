@@ -245,9 +245,9 @@ public class AdminUsers extends javax.swing.JFrame implements ActionListener, Li
             JComboBox combo = new JComboBox(opciones);
             ImageIcon icon = new ImageIcon("icon.png");
 
-            Object[] message = {"Nombre Usuario:", username, "Contraseña:", password, "Privilegios:", combo};
+            Object[] message = {"Username:", username, "Password:", password, "Privileges:", combo};
 
-            int option = JOptionPane.showConfirmDialog(this, message, "Nuevo Usuario", JOptionPane.OK_CANCEL_OPTION, WIDTH, icon);
+            int option = JOptionPane.showConfirmDialog(this, message, "New user", JOptionPane.OK_CANCEL_OPTION, WIDTH, icon);
             if (option == JOptionPane.OK_OPTION) {
                 if (!username.getText().equals("") && !password.getText().equals("")) {
                     String name = username.getText();
@@ -257,10 +257,10 @@ public class AdminUsers extends javax.swing.JFrame implements ActionListener, Li
                     pers.newUser(name, pass, perm);
 
                     LogFile.updateLog("Created user: " + name);
-                    JOptionPane.showMessageDialog(this, "Nuevo usuario creado con éxito!!", "Aviso", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "New user created succesfully!!", "Success", JOptionPane.INFORMATION_MESSAGE);
                     llenarTabla();
                 } else {
-                    JOptionPane.showMessageDialog(this, "No ha introducido nombre de usuario o contraseña!!", "Aviso", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Missing username or password", "Warning", JOptionPane.WARNING_MESSAGE);
                 }
             }
         }
@@ -273,11 +273,11 @@ public class AdminUsers extends javax.swing.JFrame implements ActionListener, Li
 
             ImageIcon icon = new ImageIcon("icon.png");
 
-            int option = JOptionPane.showConfirmDialog(this, "Desea eliminar al usuario: " + u[0].trim(), "Advertencia", JOptionPane.OK_CANCEL_OPTION, WIDTH, icon);
+            int option = JOptionPane.showConfirmDialog(this, "Do you want to delete: " + u[0].trim(), "Warning", JOptionPane.OK_CANCEL_OPTION, WIDTH, icon);
             if (option == JOptionPane.OK_OPTION) {
                 pers.deleteUser(u[0].trim());
-                JOptionPane.showMessageDialog(this, "Usuario " + u[0].trim() + " eliminado con éxito!!", "Aviso", JOptionPane.INFORMATION_MESSAGE);
-                LogFile.updateLog("Removed user: " + u[0].trim());
+                JOptionPane.showMessageDialog(this, "User " + u[0].trim() + " deleted succesfully!!", "success", JOptionPane.INFORMATION_MESSAGE);
+                LogFile.updateLog("Deleted user: " + u[0].trim());
                 llenarTabla();
             }
         }

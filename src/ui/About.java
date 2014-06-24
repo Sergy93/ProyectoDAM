@@ -28,7 +28,7 @@ public class About extends javax.swing.JFrame {
 
         jLabel2 = new javax.swing.JLabel();
 
-        setTitle("Sobre");
+        setTitle("About");
         setAlwaysOnTop(true);
 
         jLabel2.setText("<html>Java Database Manager. Version 1.0 <br>Software for handling MySql database management.<br>Sergio Jimenez & Filip Enculescu - 2014</html>");
